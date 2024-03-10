@@ -71,7 +71,7 @@ def extract_info(file_name):
     fsID, classID, occurrenceID, sliceID = file_name.replace('.wav', '').split('-')
     return fsID, classID, occurrenceID, sliceID
 
-def noise_dataframe(folder_path) -> pd.Dataframe:
+def noise_dataframe(folder_path) -> pd.DataFrame:
     # List to store data
     data = []
 
@@ -96,4 +96,4 @@ def noise_dataframe(folder_path) -> pd.Dataframe:
             })
 
     # Create a DataFrame from the list of dictionaries
-    df = pd.DataFrame(data)
+    return  pd.DataFrame(data)

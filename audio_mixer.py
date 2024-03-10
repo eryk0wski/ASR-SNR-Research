@@ -1,17 +1,35 @@
-import numpy
+import numpy as np
 import librosa
 import soundfile
 
+'''
 def add_noise_snr(audio, noise, snr):
-    clean_db = 10 * numpy.log10(numpy.mean(audio ** 2) + 1e-4)
+    clean_db = 10 * np.log10(np.mean(audio ** 2) + 1e-4)
     audio_length = audio.shape[0]
     if noise.shape[0] <= audio_length:
         shortage = audio_length - noise.shape[0]
-        noise = numpy.pad(noise, (0, shortage), 'wrap')
-    noise_db = 10 * numpy.log10(numpy.mean(noise ** 2) + 1e-4)
-    add_noise = numpy.sqrt(10 ** ((clean_db - noise_db - snr) / 10)) * noise
+        noise = np.pad(noise, (0, shortage), 'wrap')
+    noise_db = 10 * np.log10(np.mean(noise ** 2) + 1e-4)
+    add_noise = np.sqrt(10 ** ((clean_db - noise_db - snr) / 10)) * noise
     mix_audio = audio + add_noise
     return mix_audio
+    '''
+
+def add_noise_snr(audio, noise, snr):
+    clean_db = 10 * np.log10(np.mean(audio ** 2) + 1e-4)
+    audio_length = audio.shape[0]
+
+    if noise.shape[0] < audio_length:
+        shortage = audio_length - noise.shape[0]
+        noise = np.pad(noise, (0, shortage), 'wrap')
+    elif noise.shape[0] > audio_length:
+        noise = noise[:audio_length]
+
+    noise_db = 10 * np.log10(np.mean(noise ** 2) + 1e-4)
+    add_noise = np.sqrt(10 ** ((clean_db - noise_db - snr) / 10)) * noise
+    mix_audio = audio + add_noise
+    return mix_audio
+
 def read_audio(file_audio):
     audio, sr = librosa.load(file_audio, sr=8000, mono=True)
     return audio
