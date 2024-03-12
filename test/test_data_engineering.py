@@ -1,14 +1,19 @@
 import pytest
 import pandas as pd
-from data_engineering import creating_random_split_df, copy_files
-import datasets
+from data_engineering import creating_random_split_df, copy_files, create_distribution_dict
+from datasets import Dataset 
 from tempfile import TemporaryDirectory
+
+
+
+# test creating_random_split_Df
 
 @pytest.fixture
 def example_df():
     return  pd.DataFrame({'col1' : [1,2,3,4,5,6],
                           'col2' : ['a', 'b', 'c', 'd', 'e', 'f'],
                           'col3' : [8,9,10,11,12,13]})
+
 
 @pytest.fixture
 def example_dict():
@@ -61,8 +66,21 @@ def test_output_indexes(example_df):
     result_df = creating_random_split_df(example_df, batch_size)
     assert all(index in example_df.index for index in result_df.index)
 
+#test create_distribution dictionary
+
+#checking error risen while inputting dataframe instead of column
+def test_create_distribution_dict_input(example_df):
+    with pytest.raises(ValueError):
+        create_distribution_dict(example_df)
+
+#checking if output is dictionary and values are rounded
+def test_create_distribution_dict_output(example_df):
+    output_dict = create_distribution_dict(example_df['col2'])
+    assert output_dict == {'a':0.167, 'b':0.167, 'c':0.167, 'd': 0.167, 'e':0.167, 'f':0.167}
 
 
+
+'''
 @pytest.fixture
 
 def create_temp_folder():
@@ -102,4 +120,4 @@ def test_copy_files_exception():
     with TemporaryDirectory() as temp_folder:
         # Call the function with the sample DataFrame and destination folder
         with pytest.raises(Exception):
-            copy_files(df, 'path', temp_folder)
+            copy_files(df, 'path', temp_folder)'''

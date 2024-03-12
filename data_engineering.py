@@ -3,8 +3,7 @@ import random
 import os
 import datasets
 
-def creating_random_split_df(data,batch) -> pd.DataFrame:    
-
+def creating_random_split_df(data: pd.DataFrame,batch: int) -> pd.DataFrame:    
 
     # Check if the input is a DataFrame or a dictionary
     if not isinstance(data, (pd.DataFrame, datasets.arrow_dataset.Dataset)):
@@ -31,6 +30,18 @@ def creating_random_split_df(data,batch) -> pd.DataFrame:
         df.reset_index(drop=True, inplace=True)
     
     return df
+
+
+def create_distribution_dict(data:pd.Series) -> dict:
+
+    # Raise error if input is not DataFrame
+    if not isinstance(data, pd.Series):
+        raise ValueError("Input can only be dataframe column")
+    
+    normalised_values = round(data.value_counts() / len(data),3)
+
+    datasets_dict = normalised_values.round(3).to_dict()
+    return datasets_dict 
 
 
 
@@ -72,7 +83,6 @@ def extract_info(file_name):
     return fsID, classID, occurrenceID, sliceID
 
 def noise_dataframe(folder_path) -> pd.DataFrame:
-    # List to store data
     data = []
 
     # Loop through each folder from fold1 to fold10
