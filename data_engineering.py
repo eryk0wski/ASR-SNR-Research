@@ -32,15 +32,18 @@ def creating_random_split_df(data: pd.DataFrame,batch: int) -> pd.DataFrame:
     return df
 
 
-def create_distribution_dict(data:pd.Series) -> dict:
+def create_distribution_dict(data:pd.Series,percent:bool = True) -> dict:
 
     # Raise error if input is not DataFrame
     if not isinstance(data, pd.Series):
         raise ValueError("Input can only be dataframe column")
     
-    normalised_values = round(data.value_counts() / len(data),3)
+    if percent == True:
+        normalised_values = round(data.value_counts() / len(data),3)
+    else:
+        normalised_values = data.value_counts()
 
-    datasets_dict = normalised_values.round(3).to_dict()
+    datasets_dict = normalised_values.to_dict()
     return datasets_dict 
 
 
