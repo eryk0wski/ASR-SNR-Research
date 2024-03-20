@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from data_engineering import creating_random_split_df, copy_files, create_distribution_dict
+from src.data_engineering import creating_random_split_df, copy_files, create_distribution_dict
 from datasets import Dataset 
 from tempfile import TemporaryDirectory
 
