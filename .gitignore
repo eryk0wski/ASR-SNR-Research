@@ -7,3 +7,5 @@ data/VISC Dataset SON/
 data/mixed_recordings/
 data/PWR_dataset/
 .pytest_cache/
+whisper-large-pol-car/ 
+whisper-med-pol-car/
