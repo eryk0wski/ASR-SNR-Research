@@ -1,5 +1,7 @@
 # ASR Polish Research Project
 
+# SNR Research
+
 ## About Project
 
 Project aims to research how noises impact speech recognition algorithms. Dataset used for the project was training batch from 'BIGOS v2 dataset', containing most of polish-speaking speech datasets. Models that were chosen for research:
@@ -12,8 +14,12 @@ Noise datasets used for research:
 - UrbanNoises8K
 - Vehicle Interior Sounds Dataset 
 
-Noises and speech audios were normalized to loudness of -20dB. Then mixed with different rates of SNR Ratios 100,50,25,10,5,1,-1,-3,-10. Each SNR values was tested by each model and WER values were calculated as model quality rating.
+Noises and speech audios were normalized to loudness of -20dB. Then mixed with different rates of SNR Ratios 100,50,25,10,5,1,-1,-3,-10. Each SNR values was tested by each model and WER values were calculated as model quality rating. Other metric were also included: word with the most errors etc. Attempts have also been made to made some unique evaluation method using Chat GPT, but until now they were unsuccessful.
 
+
+# Demo
+
+Demo version of the project has been included as demo notebook. It is utilizing already prepared and randomly chosen recordings.
 
 ## Installation
 
@@ -22,20 +28,8 @@ You can download them in bulk by running:
 
     $ pip install -r requirements.txt
 
-Otherwise you can install them one by one, as listed below:
-    pip install datasets==2.18.0
-    pip install librosa==0.10.1
-    pip install numpy==1.24.3
-    pip install pandas==2.2.1
-    pip install pytest==8.1.1
-    pip install soundfile==0.12.1
-
-
-
-
  ## Configuration for your usage.
- Unzip VISC Noises dataset and UrbanNoises dataset and put them into data folder.
-
+ Unzip VISC Noises dataset and UrbanNoises dataset and put them into data folder. Next steps are included in the notebooks.
 
 
 ## Testing times
@@ -54,13 +48,56 @@ Wav2wec2:
 - One batch with 2500 sentences '250 min'. CUDA included.
 - Three batches with 2500 sentences '689 min'. CUDA included.
 
+# Model fine-tuning
+
+I have also fine-tuned whisper-medium model to work better with speech mixed with vehicle interior noises.
+Fine-tuning batch: 750 recordings + 150 evaluation. Speech and noise recordings normalized to -20dB. Recordings mixed with SNR value of 25 dB.
+Model works, but available computational power didn't allow me to train it sufficiently.
+
+## Fine tuned model usage
+
+```python
+# Specify the CUDA device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model_id = "eryk7381/whisper-med-pol-car"
+torch_dtype = torch.float16 # You can adjust the dtype if needed
+# Load model and move it to CUDA
+model = AutoModelForSpeechSeq2Seq.from_pretrained(
+model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+)
+model.to(device)
+# Load processor
+processor = AutoProcessor.from_pretrained(model_id)
+# Create the pipeline with CUDA support
+pipe = pipeline(
+"automatic-speech-recognition",
+model=model,
+tokenizer=processor.tokenizer,
+feature_extractor=processor.feature_extractor,
+max_new_tokens=128,
+chunk_length_s=30,
+batch_size=16,
+return_timestamps=True,
+torch_dtype=torch_dtype,
+device=device,
+)
+audio_path = 'your_audio_path.wav'
+sample = audio_path
+result = pipe(sample, generate_kwargs={"language": "polish"})
+print(result['text'])
+```
+
+
+
 ## Training times
 Training batches:
 - 750 recordings - 22h
 - 7500 recording - 202h (predicted)
 - 75000 recordings - 2000h (predicted)
 
-## References
-Bigos dataset: https://huggingface.co/datasets/michaljunczyk/pl-asr-bigos-v2
+# References
+Bigos v2 dataset: https://huggingface.co/datasets/michaljunczyk/pl-asr-bigos-v2
+
 Wav2wec2 model: https://huggingface.co/jonatasgrosman/wav2vec2-large-xlsr-53-polish
+
 Whisper model: https://huggingface.co/openai/whisper-large-v3
