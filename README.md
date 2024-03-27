@@ -55,10 +55,12 @@ Wav2wec2:
 - Three batches with 2500 sentences '689 min'. CUDA included.
 
 ## Training times
-For future changes .....
-
+Training batches:
+- 750 recordings - 22h
+- 7500 recording - 202h (predicted)
+- 75000 recordings - 2000h (predicted)
 
 ## References
-Bigos dataset:
-Wav2wec2 model:
-Whisper model:
+Bigos dataset: https://huggingface.co/datasets/michaljunczyk/pl-asr-bigos-v2
+Wav2wec2 model: https://huggingface.co/jonatasgrosman/wav2vec2-large-xlsr-53-polish
+Whisper model: https://huggingface.co/openai/whisper-large-v3
