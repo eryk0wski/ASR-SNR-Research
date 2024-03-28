@@ -14,7 +14,7 @@ Noise datasets used for research:
 - UrbanNoises8K
 - Vehicle Interior Sounds Dataset 
 
-Noises and speech audios were normalized to loudness of -20dB. Then mixed with different rates of SNR Ratios 100,50,25,10,5,1,-1,-3,-10. Each SNR values was tested by each model and WER values were calculated as model quality rating. Other metric were also included: word with the most errors etc. Attempts have also been made to made some unique evaluation method using Chat GPT, but until now they were unsuccessful.
+Noises and speech audios were normalized to loudness of -20dB. Then mixed with different rates of SNR Ratios 100, 50, 25, 10, 5, 1, -1, -3, -10. Each SNR values was tested by each model and WER values were calculated as model quality rating. Other metric were also included: word with the most errors etc. Attempts have also been made to made some unique evaluation method using Chat GPT, but until now they were unsuccessful.
 
 
 # Demo
@@ -61,13 +61,19 @@ Model works, but available computational power didn't allow me to train it suffi
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_id = "eryk7381/whisper-med-pol-car"
 torch_dtype = torch.float16 # You can adjust the dtype if needed
+
+
 # Load model and move it to CUDA
 model = AutoModelForSpeechSeq2Seq.from_pretrained(
 model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
 )
 model.to(device)
+
+
 # Load processor
 processor = AutoProcessor.from_pretrained(model_id)
+
+
 # Create the pipeline with CUDA support
 pipe = pipeline(
 "automatic-speech-recognition",
@@ -81,6 +87,8 @@ return_timestamps=True,
 torch_dtype=torch_dtype,
 device=device,
 )
+
+# Inputing your file path
 audio_path = 'your_audio_path.wav'
 sample = audio_path
 result = pipe(sample, generate_kwargs={"language": "polish"})

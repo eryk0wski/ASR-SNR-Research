@@ -2,6 +2,8 @@ import pandas as pd
 import random
 import os
 import datasets
+import soundfile as sf
+import pyloudnorm as pyln
 
 def creating_random_split_df(data: pd.DataFrame,batch: int) -> pd.DataFrame:    
 
@@ -110,3 +112,23 @@ def noise_dataframe(folder_path) -> pd.DataFrame:
 
     # Create a DataFrame from the list of dictionaries
     return  pd.DataFrame(data)
+
+
+
+def audio_normalizer(input_path, output_folder_path,output_file_name, loudness_value):
+
+    # Load audio
+    data, rate = sf.read(input_path)
+
+    # Measure the loudness
+    meter = pyln.Meter(rate, block_size =0.100)
+    loudness = meter.integrated_loudness(data)
+
+    # Loudness normalize audio to -12 dB LUFS
+    loudness_normalized_audio = pyln.normalize.loudness(data, loudness, loudness_value)
+
+    # Specify the output file paths
+    loudness_normalized_output_path = os.path.join(output_folder_path, output_file_name)
+
+    # Write normalized audio to files
+    sf.write(loudness_normalized_output_path, loudness_normalized_audio, rate)
