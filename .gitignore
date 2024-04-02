@@ -1,0 +1,11 @@
+commons_pl/
+data/VISC_Dataset_SON/
+__pycache__/
+data/testing_batch/
+data/UrbanSound8K/
+data/VISC Dataset SON/
+data/mixed_recordings/
+data/PWR_dataset/
+.pytest_cache/
+whisper-large-pol-car/ 
+whisper-med-pol-car/
