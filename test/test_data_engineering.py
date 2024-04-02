@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 
 
-# test creating_random_split_Df
+# test creating_random_split_df
 
 @pytest.fixture
 def example_df():

@@ -41,3 +41,27 @@ def kde_plotting(df:pd.DataFrame, wer_columns_list:list, plot_title:str) -> plt.
     plt.grid(True)
     plt.show()
     
+
+
+def plot_model_comparison(data1:pd.DataFrame, data2:pd.DataFrame,stat_name:str,label1:str,label2:str,label_y_name:str):
+    # Extract 'Acceptable percentage' values from both dataframes
+    data_1_line = data1.loc[stat_name]
+    data_2_line = data2.loc[stat_name]
+    
+    # Convert strings to floats
+    #whisper_acceptable = data_1_line.astype(float)
+    #wav2wec_acceptable = wav2wec_acceptable.astype(float)
+    
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    data_1_line.plot(label=label1, marker='o')
+    data_2_line.plot(label=label2, marker='o')
+    
+    plt.title(f'{stat_name} plot')
+    plt.xlabel('SNR value')
+    plt.ylabel(label_y_name)
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
