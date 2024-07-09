@@ -1,7 +1,14 @@
 import torch
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union
+from transformers import WhisperFeatureExtractor, WhisperTokenizer, WhisperProcessor
+import evaluate
 
+
+model_id = "openai/whisper-medium"
+feature_extractor = WhisperFeatureExtractor.from_pretrained(model_id)
+tokenizer = WhisperTokenizer.from_pretrained(model_id, language="polish", task="transcribe")
+processor = WhisperProcessor.from_pretrained(model_id, language="polish", task="transcribe")
 
 def prepare_dataset(batch):
     # load and resample audio data from 48 to 16kHz
@@ -14,6 +21,10 @@ def prepare_dataset(batch):
     batch["labels"] = tokenizer(batch["sentences"]).input_ids
     return batch
 
+
+metric = evaluate.load("wer")
+
+
 def compute_metrics(pred):
     pred_ids = pred.predictions
     label_ids = pred.label_ids
@@ -23,6 +34,7 @@ def compute_metrics(pred):
 
     # we do not want to group tokens when computing the metrics
     pred_str = tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+
     label_str = tokenizer.batch_decode(label_ids, skip_special_tokens=True)
 
     wer = 100 * metric.compute(predictions=pred_str, references=label_str)
