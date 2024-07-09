@@ -132,3 +132,17 @@ def audio_normalizer(input_path, output_folder_path,output_file_name, loudness_v
 
     # Write normalized audio to files
     sf.write(loudness_normalized_output_path, loudness_normalized_audio, rate)
+
+
+def df_choose_files_from_folder(data:pd.DataFrame,path_column_name:str, folder_path:str):
+
+    # Assigning file path to directory variable
+    directory = folder_path
+
+    # Loading all files from directory
+    files_in_directory = os.listdir(directory)
+
+    # Choosing lines where filepath is same as file path in directory
+    df = data[data[path_column_name].isin(files_in_directory)].reset_index().drop(columns='index')
+
+    return df
