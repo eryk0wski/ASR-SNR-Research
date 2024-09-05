@@ -2,17 +2,28 @@ import pandas as pd
 from jiwer import wer
 import nltk
 from nltk import FreqDist
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize, RegexpTokenizer
+import string
+from nltk.probability import FreqDist
 
 
-def advanced_statistics(data:pd.DataFrame,column_prefix:str,sentences_column:str,proc_outliers:int = 5):
+def preprocess_text(text: str) -> str:
+    # Convert text to lowercase and remove punctuation
+    return text.lower().translate(str.maketrans('', '', string.punctuation))
+
+def advanced_statistics(data: pd.DataFrame, column_prefix: str, sentences_column: str, proc_outliers: int = 5):
     for column in data.columns:
-        if column.startswith(column_prefix):
-            wer_column_name = column.replace(column_prefix, 'WER_SNR_')
-            data[wer_column_name] = data.apply(lambda row: 100 * wer(row[sentences_column], row[column]), axis=1)
+        if  column.startswith(column_prefix):
+            wer_column_name = column.replace(column_prefix, 'Model_SNR')
+            data[wer_column_name] = data.apply(
+                lambda row: 100 * wer(
+                    preprocess_text(row[sentences_column]), 
+                    preprocess_text(row[column])
+                ), axis=1
+            )
 
     # Descriptive statistics for WER columns
-    wer_columns = [col for col in data.columns if col.startswith('WER_SNR_')]
+    wer_columns = [col for col in data.columns if col.startswith('Model_SNR_')]
     descriptive_stats = data[wer_columns].describe()
 
     # Compute mean excluding top selected percent values
@@ -51,16 +62,13 @@ def advanced_statistics(data:pd.DataFrame,column_prefix:str,sentences_column:str
     return descriptive_stats
 
 
-
-
 def word_frequency(df, transcription_column, model_recognition_column):
-    # Tokenize the transcription and ASR model output columns
-    df['transcription_tokens'] = df[transcription_column].apply(word_tokenize)
-    df['ASR_model_tokens'] = df[model_recognition_column].apply(word_tokenize)
+    # Initialize the tokenizer to keep only alphanumeric words
+    tokenizer = RegexpTokenizer(r'\w+')
 
-    # Flatten the list of all words from the transcription
-    all_transcription_words = [word for words in df['transcription_tokens'] for word in words]
-    total_transcriptions_freq = FreqDist(all_transcription_words)
+    # Tokenize the transcription and ASR model output columns
+    df['transcription_tokens'] = df[transcription_column].apply(lambda x: tokenizer.tokenize(x.lower()))
+    df['ASR_model_tokens'] = df[model_recognition_column].apply(lambda x: tokenizer.tokenize(x.lower()))
 
     # Compute statistics
     def compute_stats(row):
@@ -77,74 +85,40 @@ def word_frequency(df, transcription_column, model_recognition_column):
 
     df['stats'] = df.apply(compute_stats, axis=1)
 
-    # Get mostly missed words
-    missed_words_freq = FreqDist([word for words in df['stats'].apply(lambda x: x['missed_words']) for word in words])
-    mostly_missed_words = missed_words_freq.most_common(5)
+    # Flatten the lists of missed and recognized words
+    all_missed_words = [word for words in df['stats'].apply(lambda x: x['missed_words']) for word in words]
+    all_recognized_words = [word for words in df['stats'].apply(lambda x: x['recognized_words']) for word in words]
 
-    # Get mostly recognized words
-    recognized_words_freq = FreqDist([word for words in df['stats'].apply(lambda x: x['recognized_words']) for word in words])
-    mostly_recognized_words = recognized_words_freq.most_common(5)
+    # Calculate frequencies
+    missed_words_freq = FreqDist(all_missed_words)
+    recognized_words_freq = FreqDist(all_recognized_words)
 
-    # Calculate the percentage of missed words and recognized words
-    mostly_missed_words_percent = [
-        (word, count, (count / total_transcriptions_freq[word]) * 100)
-        for word, count in mostly_missed_words
+    # Total word counts
+    total_transcription_words = sum(FreqDist([word for words in df['transcription_tokens'] for word in words]).values())
+    total_asr_words = sum(FreqDist([word for words in df['ASR_model_tokens'] for word in words]).values())
+
+    # Get most frequent words in each category
+    most_missed_words = missed_words_freq.most_common()
+    most_recognized_words = recognized_words_freq.most_common()
+
+    # Calculate percentages and filter out overlapping words
+    missed_words_percent = [
+        (word, count, (count / total_transcription_words) * 100)
+        for word, count in most_missed_words
     ]
-    mostly_recognized_words_percent = [
-        (word, count, (count / total_transcriptions_freq[word]) * 100)
-        for word, count in mostly_recognized_words
+    recognized_words_percent = [
+        (word, count, (count / total_asr_words) * 100)
+        for word, count in most_recognized_words
     ]
+
+    # Filter words that are in both lists
+    missed_set = set(word for word, _, _ in missed_words_percent)
+    recognized_set = set(word for word, _, _ in recognized_words_percent)
+
+    mostly_missed_words = [item for item in missed_words_percent if item[0] not in recognized_set][:3]
+    mostly_recognized_words = [item for item in recognized_words_percent if item[0] not in missed_set][:3]
 
     return {
-        'mostly_missed_words': mostly_missed_words_percent,
-        'mostly_recognized_words': mostly_recognized_words_percent
-    }
-
-
-
-def word_frequency1(df, transcription_column, model_recognition_column):
-    # Tokenize the transcription and ASR model output columns
-    df['transcription_tokens'] = df[transcription_column].apply(word_tokenize)
-    df['ASR_model_tokens'] = df[model_recognition_column].apply(word_tokenize)
-
-    # Flatten the list of all words from the transcription
-    all_transcription_words = [word for words in df['transcription_tokens'] for word in words]
-    total_transcriptions_freq = FreqDist(all_transcription_words)
-
-    # Compute statistics
-    def compute_stats1(row):
-        trans_tokens = row['transcription_tokens']
-        ASR_tokens = row['ASR_model_tokens']
-        
-        missed_words = [word for word in trans_tokens if word not in ASR_tokens]
-        recognized_words = [word for word in ASR_tokens if word in trans_tokens]
-        
-        return {
-            'missed_words': missed_words,
-            'recognized_words': recognized_words
-        }
-
-    df['stats'] = df.apply(compute_stats1, axis=1)
-
-    # Get mostly missed words
-    missed_words_freq = FreqDist([word for words in df['stats'].apply(lambda x: x['missed_words']) for word in words])
-    mostly_missed_words = missed_words_freq.most_common(5)
-
-    # Get mostly recognized words
-    recognized_words_freq = FreqDist([word for words in df['stats'].apply(lambda x: x['recognized_words']) for word in words])
-    mostly_recognized_words = recognized_words_freq.most_common(5)
-
-    # Calculate the percentage of missed words and recognized words
-    mostly_missed_words_percent = [
-        (word, count, (count / total_transcriptions_freq[word]) * 100)
-        for word, count in mostly_missed_words
-    ]
-    mostly_recognized_words_percent = [
-        (word, count, (count / total_transcriptions_freq[word]) * 100)
-        for word, count in mostly_recognized_words
-    ]
-
-    return {
-        'mostly_missed_words': mostly_missed_words_percent,
-        'mostly_recognized_words': mostly_recognized_words_percent
+        'mostly_missed_words': mostly_missed_words,
+        'mostly_recognized_words': mostly_recognized_words
     }
