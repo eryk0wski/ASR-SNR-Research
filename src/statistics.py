@@ -1,5 +1,5 @@
 import pandas as pd
-from jiwer import wer
+from jiwer import wer, cer, wil
 import nltk
 from nltk import FreqDist
 from nltk.tokenize import word_tokenize, RegexpTokenizer
@@ -60,6 +60,71 @@ def advanced_statistics(data: pd.DataFrame, column_prefix: str, sentences_column
         descriptive_stats[col] = descriptive_stats[col].apply(lambda x: int(x) if x == int(x) else x)
 
     return descriptive_stats
+
+def advanced_statistics_cer(data: pd.DataFrame, column_prefix: str, sentences_column: str, proc_outliers: int = 5):
+    for column in data.columns:
+        if  column.startswith(column_prefix):
+            wer_column_name = column.replace(column_prefix, 'Model_SNR')
+            data[wer_column_name] = data.apply(
+                lambda row: 100 * cer(
+                    preprocess_text(row[sentences_column]), 
+                    preprocess_text(row[column])
+                ), axis=1
+            )
+
+    # Descriptive statistics for WER columns
+    wer_columns = [col for col in data.columns if col.startswith('Model_SNR_')]
+    descriptive_stats = data[wer_columns].describe()
+
+    # Compute mean excluding top selected percent values
+    low_proc = proc_outliers/100
+    high_proc = (100-proc_outliers)/100
+    data[wer_columns] = data[wer_columns].apply(pd.to_numeric, errors='coerce')
+    mean_excluding_outliers = data[wer_columns].apply(lambda x: x[(x >= x.quantile(low_proc)) & (x <= x.quantile(high_proc))].mean())
+    descriptive_stats.loc['mean without 2%'] = mean_excluding_outliers
+
+    # Round the descriptive statistics table
+    descriptive_stats = descriptive_stats.round(2)
+
+    # Convert rounded values with .00 to the 
+    #Doesn't work, shouldn't work, but I had hope
+    for col in descriptive_stats.columns:
+        descriptive_stats[col] = descriptive_stats[col].apply(lambda x: int(x) if x == int(x) else x)
+
+    return descriptive_stats
+
+def advanced_statistics_wil(data: pd.DataFrame, column_prefix: str, sentences_column: str, proc_outliers: int = 5):
+    for column in data.columns:
+        if  column.startswith(column_prefix):
+            wer_column_name = column.replace(column_prefix, 'Model_SNR')
+            data[wer_column_name] = data.apply(
+                lambda row: 100 * wil(
+                    preprocess_text(row[sentences_column]), 
+                    preprocess_text(row[column])
+                ), axis=1
+            )
+
+    # Descriptive statistics for WER columns
+    wer_columns = [col for col in data.columns if col.startswith('Model_SNR_')]
+    descriptive_stats = data[wer_columns].describe()
+
+    # Compute mean excluding top selected percent values
+    low_proc = proc_outliers/100
+    high_proc = (100-proc_outliers)/100
+    data[wer_columns] = data[wer_columns].apply(pd.to_numeric, errors='coerce')
+    mean_excluding_outliers = data[wer_columns].apply(lambda x: x[(x >= x.quantile(low_proc)) & (x <= x.quantile(high_proc))].mean())
+    descriptive_stats.loc['mean without 2%'] = mean_excluding_outliers
+
+    # Round the descriptive statistics table
+    descriptive_stats = descriptive_stats.round(2)
+
+    # Convert rounded values with .00 to the 
+    #Doesn't work, shouldn't work, but I had hope
+    for col in descriptive_stats.columns:
+        descriptive_stats[col] = descriptive_stats[col].apply(lambda x: int(x) if x == int(x) else x)
+
+    return descriptive_stats
+
 
 
 def word_frequency(df, transcription_column, model_recognition_column):
